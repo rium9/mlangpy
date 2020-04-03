@@ -1,3 +1,0 @@
-CR: /\r/
-LF: /\n/
-NEWLINE: (CR? LF)+
