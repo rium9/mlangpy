@@ -1,0 +1,2 @@
+<If Clause> ::= <IF> <boolean expression> <THEN>
+<boolean expression> ::= <TRUE> | <FALSE>

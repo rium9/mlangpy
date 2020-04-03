@@ -1,0 +1,3 @@
+<If Clause> ::= <IF> <boolean expression> [<connective><boolean expression>]... <THEN>
+<boolean expression> ::= <TRUE> | <FALSE>
+<connective> ::= (<AND> | <OR>) [<NOT>]

@@ -1,0 +1,15 @@
+syntax: syntax_rule+
+syntax_rule: non_terminal "::=" def_list
+
+def_list: def ("|" def)*
+def: term+
+term: non_terminal | terminal
+non_terminal: "<" WORD (" " WORD)* ">"
+terminal: WORD
+
+PRODUCTION: "::="
+ALT: "|"
+L_BOUND: "<"
+R_BOUND: ">"
+
+%import common.WORD

@@ -1,0 +1,2 @@
+<if clause> ::= if <Boolean expression> then
+<Boolean expression> ::= True | False

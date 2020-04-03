@@ -1,0 +1,5 @@
+<Notify message> ::=
+                          <Common Header> [<INTEGRITY>]
+                          [ <MESSAGE_ID_ACK> | <MESSAGE_ID_NACK> ... ]
+                          [ <MESSAGE_ID> ]
+                          <ERROR_SPEC> <notify session list>

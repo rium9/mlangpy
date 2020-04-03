@@ -1,0 +1,4 @@
+(* simple if clause *)
+if clause = “if”, Boolean expression, {connective, Boolean expression}, “then” ;
+Boolean expression = “True” | “False” ;
+connective = (“and” | “or”), [“not”, "negative"] ;

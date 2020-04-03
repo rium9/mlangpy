@@ -1,0 +1,16 @@
+syntax: (syntax_rule | incremental_rule)+
+syntax_rule: non_terminal "=" def_list NEWLINE
+incremental_rule: non_terminal "=/" def_list NEWLINE
+
+non_terminal: WORD ("-" WORD)*
+
+def_list: def ("/" def)*
+def: term (" " term)
+term:
+
+repetition: repeat? def
+
+comment = ";"
+
+
+%import .aux.NEWLINE

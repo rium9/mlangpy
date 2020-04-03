@@ -1,0 +1,30 @@
+syntax: syntax_rule+
+syntax_rule: non_terminal "::=" def_list
+
+def_list: def ("|" def)*
+def: term+
+term: non_terminal | terminal | optional_sequence
+    | repeated_sequence | grouped_sequence
+
+
+non_terminal: message | construct
+terminal: object
+
+optional_sequence: "[" def_list "]"
+repeated_sequence: term "..."
+grouped_sequence: "(" def_list ")"
+
+object: "<" UCASE_WORD ("_" UCASE_WORD)* ">"
+message: "<" CAP_WORD (" " (CAP_WORD | LCASE_WORD))* ">"
+construct: "<" LCASE_WORD+ (" " LCASE_WORD)* ">"
+
+
+CAP_WORD: UCASE_LETTER LCASE_LETTER+
+LCASE_WORD: LCASE_LETTER+
+UCASE_WORD: UCASE_LETTER+
+
+%import common.WORD
+%import common.LETTER
+%import common.LCASE_LETTER
+%import common.UCASE_LETTER
+%import .aux.NEWLINE

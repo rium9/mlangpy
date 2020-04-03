@@ -1,0 +1,94 @@
+// grammar for EBNF
+syntax: comment* (syntax_rule)+ comment*
+syntax_rule: non_terminal _DEFINING def_list _DEF_TERMINATE
+
+def_list: def (_DEF_SEP def)*
+def: term (_CONCAT term)*
+
+term: factor (_EXCEPT exception)?
+exception: factor
+factor: (integer "*")? primary
+primary: optional_sequence
+    |   repeated_sequence
+    |   special_sequence
+    |   grouped_sequence
+    |   non_terminal
+    |   terminal
+    |
+
+optional_sequence: _START_OPTIONAL def_list _END_OPTIONAL
+repeated_sequence: _START_REPEATED def_list _END_REPEATED
+grouped_sequence: _START_GROUP def_list _END_GROUP
+
+terminal: "\"" DBLQUOTE_SYM_STRING "\""
+    |   "'" SNGQUOTE1_STRING  "'"
+    |   "“" DBLQUOTE_ASYM_STRING "”"
+    |   "’" SNGQUOTE2_STRING "’"
+
+TERMINAL_CHAR: LETTER | NUMBER | "="
+    | _CONCAT | _DEFINING | _DEF_SEP
+    | _END_COMMENT | _END_GROUP | _END_OPTIONAL
+    | _END_REPEATED | _EXCEPT | _REPETITION | _SPECIAL_SEQ
+    | _START_COMMENT | _START_GROUP | _START_OPTIONAL
+    | _START_REPEATED | _DEF_TERMINATE | OTHER_CHAR
+
+
+DBLQUOTE_SYM_STRING:  (TERMINAL_CHAR | START_DBLQUOTE_ASYM | END_DBLQUOTE_ASYM | SNGQUOTE1 | SNGQUOTE2)+
+DBLQUOTE_ASYM_STRING: (TERMINAL_CHAR | DBLQUOTE_SYM | SNGQUOTE1 | SNGQUOTE2)+
+SNGQUOTE1_STRING:     (TERMINAL_CHAR | DBLQUOTE_SYM | START_DBLQUOTE_ASYM | END_DBLQUOTE_ASYM | SNGQUOTE2)+
+SNGQUOTE2_STRING:     (TERMINAL_CHAR | DBLQUOTE_SYM | START_DBLQUOTE_ASYM | END_DBLQUOTE_ASYM | SNGQUOTE1)+
+
+DBLQUOTE_SYM:        "\""
+START_DBLQUOTE_ASYM: "“"
+END_DBLQUOTE_ASYM:   "”"
+SNGQUOTE1:           "'"
+SNGQUOTE2:           "’"
+
+non_terminal: WORD (" " (WORD | DIGIT))*
+integer: DIGIT+
+
+comment: _START_COMMENT COMMENT_STRING _END_COMMENT
+COMMENT_STRING: COMMENT_SYMBOL+
+COMMENT_SYMBOL: COMMENTLESS | OTHER_CHAR | /NEWLINE/ | " "
+
+COMMENTLESS: LETTER | NUMBER
+    | _CONCAT | _DEFINING | _DEF_SEP
+    | _END_GROUP | _END_OPTIONAL
+    | _END_REPEATED | _EXCEPT | _REPETITION | _SPECIAL_SEQ
+    | _START_GROUP | _START_OPTIONAL
+    | _START_REPEATED | _DEF_TERMINATE | OTHER_CHAR | TERMINAL_CHAR
+    | DBLQUOTE_SYM | START_DBLQUOTE_ASYM | END_DBLQUOTE_ASYM | SNGQUOTE1 | SNGQUOTE2
+
+special_sequence: _SPECIAL_SEQ WORD+ _SPECIAL_SEQ
+
+_DEFINING:          "="
+_CONCAT:            ","
+_DEF_SEP:           "|"
+_DEF_TERMINATE:     ";"
+_START_COMMENT:     "(*"
+_END_COMMENT:       "*)"
+_START_GROUP:       "("
+_END_GROUP:         ")"
+_SPECIAL_SEQ:       "?"
+_START_OPTIONAL:    "["
+_END_OPTIONAL:      "]"
+_START_REPEATED:    "{"
+_END_REPEATED:      "}"
+_EXCEPT:            "-"
+
+_REPETITION:        "*"
+
+OTHER_CHAR: " " | "." | ":" | "!"
+    | "!" | "+" | "_" | "%" | "@"
+    | "&" | "#" | "$" | "<" | ">"
+    | "/" | "\\" | "^" | "`" | "~"
+
+
+%import common.NUMBER
+%import common.LETTER
+%import common.DIGIT
+%import common.WORD
+
+CR : /\r/
+LF : /\n/
+NEWLINE: (CR? LF)+
