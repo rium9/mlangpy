@@ -49,7 +49,7 @@ integer: DIGIT+
 
 comment: _START_COMMENT COMMENT_STRING _END_COMMENT
 COMMENT_STRING: COMMENT_SYMBOL+
-COMMENT_SYMBOL: COMMENTLESS | OTHER_CHAR | /NEWLINE/ | " "
+COMMENT_SYMBOL: COMMENTLESS | OTHER_CHAR
 
 COMMENTLESS: LETTER | NUMBER
     | _CONCAT | _DEFINING | _DEF_SEP
@@ -88,7 +88,4 @@ OTHER_CHAR: " " | "." | ":" | "!"
 %import common.LETTER
 %import common.DIGIT
 %import common.WORD
-
-CR : /\r/
-LF : /\n/
-NEWLINE: (CR? LF)+
+%import common.NEWLINE

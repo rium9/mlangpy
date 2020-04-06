@@ -27,4 +27,3 @@ UCASE_WORD: UCASE_LETTER+
 %import common.LETTER
 %import common.LCASE_LETTER
 %import common.UCASE_LETTER
-%import .aux.NEWLINE

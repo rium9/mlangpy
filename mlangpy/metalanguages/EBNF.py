@@ -27,8 +27,8 @@ class EBNFSequence(Sequence):
 
 class EBNFRule(Rule):
 
-    def __init__(self, left, right, production='=', alternation='|', terminator=';'):
-        super().__init__(left, right, production=production, alternation=alternation, terminator=terminator)
+    def __init__(self, left, right, production='=', terminator=';'):
+        super().__init__(left, right, production=production, terminator=terminator)
 
 
 class EBNFRepetition(Repetition):

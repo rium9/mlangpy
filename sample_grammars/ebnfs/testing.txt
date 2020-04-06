@@ -1,0 +1,3 @@
+hi = "poo" ;
+ho = 4 * hi | "text" ;
+he = 1211*20 hi ;

@@ -1,5 +1,9 @@
 from ..grammar import *
 
+symbols_mapping = {
+    ';': 'SEMICOL',
+    '=': 'EQUALS'
+}
 
 class RBNFObject(Terminal):
 
@@ -7,6 +11,8 @@ class RBNFObject(Terminal):
         # TODO implement RBNF naming convention fully:
         #   'Objects are typically named in uppercase. They do not usually use
         #   spaces within the name, favoring underbars ("_").'
+        if symbols_mapping.get(subject):
+            subject = symbols_mapping.get(subject)
         super().__init__(subject.upper(), left_bound=left_bound, right_bound=right_bound)
 
 
@@ -30,8 +36,8 @@ class RBNFMessage(NonTerminal):
 
 class RBNFRule(Rule):
 
-    def __init__(self, left, right, production='::=', alternation='|', terminator=''):
-        super().__init__(left, right, production=production, alternation=alternation, terminator=terminator)
+    def __init__(self, left, right, production='::=', terminator=''):
+        super().__init__(left, right, production=production, terminator=terminator)
 
 
 class RBNFSequence(Sequence):
@@ -40,7 +46,7 @@ class RBNFSequence(Sequence):
         super().__init__(terms, separator=separator)
 
 
-class RBNFRepetition(Bracket):
+class RBNFRepetition(Repetition):
 
     def __init__(self, subject, left_bound='', right_bound=' ...'):
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
@@ -48,7 +54,7 @@ class RBNFRepetition(Bracket):
 
 class RBNF(Metalanguage):
 
-    def __init__(self, ruleset: Ruleset, normalise=False):
+    def __init__(self, ruleset, normalise=False):
         super().__init__(ruleset, syntax_dict={
             # Essential to all grammars
             Sequence: RBNFSequence,
@@ -64,5 +70,5 @@ class RBNF(Metalanguage):
             # Use anonymous functions to combine notations
             # Here, eliminate ambiguity by explicitly grouping
             Repetition: lambda x: RBNFRepetition(Group(x))
-            # Repetition: RBNFRepetition
+            #Repetition: RBNFRepetition
         }, normalise=normalise)

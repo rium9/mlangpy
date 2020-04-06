@@ -295,7 +295,7 @@ class Rule:
 
     """
 
-    def __init__(self, left, right, production='->',  terminator=''):
+    def __init__(self, left, right, production='->', terminator=''):
 
         # If left isn't a Sequence, make it one (of length 1)
         if not issubclass(left.__class__, Sequence):
@@ -407,9 +407,9 @@ class Ruleset:
             if production != None:
                 rule.prod = production
             if alternation != None:
-                rule.alt = alternation
+                rule.right.alt = alternation
             if terminator != None:
-                rule.right.ter = terminator
+                rule.terminator = terminator
 
     def __str__(self):
         return '\n'.join(str(rule) for rule in self.rules)
@@ -587,6 +587,7 @@ class Metalanguage:
                 for j in range(0, len(rule.right[i])):
                     rule.right[i][j] = self.normalise_term(rule.right[i][j])
 
+
     def export_ruleset(self, path):
         serialised_grammar = str(self.ruleset)
         f = open(path, 'w')
@@ -681,18 +682,15 @@ class Metalanguage:
 
                     # check to see if there's a definition already
                     looking_for = Rule([], [definition[i].subject, []])
-                    matching = None
-                    for r in self.ruleset:
-                        if r == looking_for:
-                            matching = r
+                    matching = self.ruleset.find_rules(looking_for)
 
                     if matching:
-                        definition[i] = matching.left[0]
+                        definition[i] = matching[0].left[0]
                     else:
-                        new_nt = NonTerminal(f'op {self.op_count}')
+                        new_nt = self.syntax[NonTerminal](f'op {self.op_count}')
                         self.op_count += 1
 
-                        new_rule = Rule(
+                        new_rule = self.syntax[Rule](
                             new_nt,
                             [definition[i].subject,
                              []]
@@ -702,34 +700,52 @@ class Metalanguage:
                         self.ruleset += new_rule
 
     def remove_groups(self, rule):
-        new_rules = Ruleset([rule])
-
         for definition in rule.right:
             for i in range(0, len(definition)):
                 if issubclass(definition[i].__class__, Group):
 
                     # check to see if there's a definition already
                     looking_for = Rule([], [definition[i].subject, []])
-                    matching = None
-                    for r in new_rules:
-                        if r == looking_for:
-                            matching = r
+                    matching = self.ruleset.find_rules(looking_for)
 
                     if matching:
-                        definition[i] = matching.left[0]
+                        definition[i] = matching[0].left[0]
                     else:
-                        new_nt = NonTerminal(f'grp {self.grp_count}')
+                        new_nt = self.syntax[NonTerminal](f'grp {self.grp_count}')
                         self.grp_count += 1
 
-                        new_rule = Rule(
+                        new_rule = self.syntax[Rule](
                             new_nt,
                             [definition[i].subject]
                         )
 
                         definition[i] = new_nt
-                        new_rules += new_rule
+                        self.ruleset += new_rule
 
-        return new_rules
+    def remove_repetitions(self, rule):
+
+        for definition in rule.right:
+            for i in range(0, len(definition)):
+                if issubclass(definition[i].__class__, Repetition):
+
+                    # check to see if there's a definition already
+                    looking_for = Rule([], [definition[i].subject, []])
+                    matching = self.ruleset.find_rules(looking_for)
+
+                    if matching:
+                        definition[i] = matching[0].left[0]
+                        continue
+
+                    new_nt = self.syntax[NonTerminal](f'rep {self.rep_count}')
+                    self.rep_count += 1
+
+                    new_rule = self.syntax[Rule](
+                        new_nt,
+                        [[definition[i].subject, new_nt], []]
+                    )
+
+                    definition[i] = new_nt
+                    self.ruleset += new_rule
 
     def test(self, rule):
         rule.right[0] = 'hi'
