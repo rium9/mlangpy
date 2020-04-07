@@ -16,10 +16,9 @@
 // Through these amendments to the grammar, we can generate a parse tree
 // that's much easier to use with grammar.py.
 
-// NB: when importing this grammar, the directive %ignore " " must also be
-// used in the instantiation parameter.
-
 %import common.NEWLINE
+%ignore " "
+%ignore NEWLINE
 
 start: syntax
 
@@ -130,7 +129,7 @@ element: rulename | group | option
 repetition: repeat? element
 repeat: specific | variable
 specific: DEC_NUM
-variable: DEC_NUM? _REPEAT DEC_NUM?
+variable: [DEC_NUM] _REPEAT [DEC_NUM]
 
 // Brackets
 option: _START_OPTION alternation _END_OPTION

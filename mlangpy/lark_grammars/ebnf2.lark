@@ -11,6 +11,8 @@
 
 %import common.LETTER
 %import common.DIGIT
+%ignore NEWLINE
+%ignore " "
 
 // See Part 4 for structure of EBNF rules
 start: syntax
