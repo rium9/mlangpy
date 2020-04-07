@@ -20,12 +20,12 @@ pip install lark-parser
 Install mlangpy:
 
 ```
-pip instll mlangpy
+pip install mlangpy
 ```
 
 ### Validate Metalanguages 
 
-Currently, mlangpy supports recognition of EBNF (ISO/IEC 14977) and ABNF (RFC 5234). You can generate parse trees for grammars.
+Currently, mlangpy supports recognition of EBNF (ISO/IEC 14977) and ABNF (RFC 5234). You can generate parse trees for grammars `metaparsers.py`
 
 ```
 from mlangpy.metaparsers import validate_ABNF, validate_ABNF_faithful, validate_EBNF
