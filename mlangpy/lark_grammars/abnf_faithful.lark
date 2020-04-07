@@ -13,6 +13,7 @@
 
 %import common.NEWLINE
 
+start: syntax
 syntax: rulelist
 
 // =====================================================================

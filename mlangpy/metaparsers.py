@@ -6,24 +6,18 @@ from mlangpy.metalanguages.BNF import *
 #from mlangpy.metalanguages.ABNF import *
 
 
-def validate_ABNF(grammar_string):
-    l = Lark(f'''start: syntax
-                %import .lark_grammars.abnf_faithful.syntax
-                %ignore " "
-                %import common.NEWLINE
-                %ignore NEWLINE
-            ''', keep_all_tokens=False)
+def validate_ABNF_faithful(grammar_string):
+    l = Lark.open('./lark_grammars/abnf_faithful.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
 
+def validate_ABNF(grammar_string):
+    l = Lark.open('./lark_grammars/abnf.lark', rel_to=__file__)
+    p = l.parse(grammar_string)
+    return p
 
 def validate_EBNF(grammar_string):
-    l = Lark(f'''start: syntax
-            %import .lark_grammars.ebnf2.syntax
-            %import .common.NEWLINE
-            %ignore NEWLINE+
-            %ignore " "
-        ''')
+    l = Lark.open('./lark_grammars/ebnf2.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
 
@@ -218,8 +212,10 @@ if __name__ == '__main__':
 
     #ebnf = parse_EBNF('../sample_grammars/ebnfs/testing.txt')
 
-    f = open('../sample_grammars/ebnfs/ebnf_self_define_no_comments.txt').read()
-    print(validate_EBNF(f).pretty())
+    f = open('../sample_grammars/abnfs/abnf1.txt').read()
+    print(validate_ABNF(f).pretty())
+    g = open('../sample_grammars/ebnfs/ebnf_self_define_no_comments.txt').read()
+    print(validate_EBNF(g).pretty())
 
 
 
