@@ -174,10 +174,7 @@ syntactic_term: syntactic_factor (EXCEPT syntactic_exception)?
 // this means nonsensical exceptions can be written in some cases.
 syntactic_exception: syntactic_factor
 
-syntactic_factor: (repeat)? syntactic_primary
-repeat: specific | range
-specific: INTEGER
-range: INTEGER? REPETITION INTEGER?
+syntactic_factor: (INTEGER REPETITION)? syntactic_primary
 
 syntactic_primary: optional_sequence
     | repeated_sequence
