@@ -9,6 +9,10 @@ import textwrap
 from ordered_set import OrderedSet
 
 
+class GrammarException(Exception):
+    pass
+
+
 # TODO this may have broken things!!
 class Feature:
 
@@ -20,6 +24,74 @@ class Feature:
             self,
             other
         ])
+
+
+class Operator(Feature):
+
+    def __init__(self, subject, operator_sym, prepend=False):
+        if not issubclass(subject.__class__, Feature):
+            raise GrammarException(f'{self.__class__.__name__} objects require a Feature object as the subject.')
+        self.subject = subject
+        self.operator_sym = operator_sym
+        self.prepend = prepend
+
+    def __str__(self):
+        if self.prepend:
+            return f'{self.operator_sym}{self.subject}'
+        else:
+            return f'{self.subject}{self.operator_sym}'
+
+    def __eq__(self, other):
+        return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
+            self.subject == other.subject
+
+
+class BinaryOperator(Feature):
+
+    def __init__(self, left, right, operator_sym):
+        self.left = left
+        self.right = right
+        self.operator_sym = operator_sym
+
+    def __str__(self):
+        return f'{self.left}{self.operator_sym}{self.right}'
+
+
+class TernaryOperator(Feature):
+
+    def __init__(self, left, middle, right, operator1_sym, operator2_sym):
+        self.left = left
+        self.middle = middle
+        self.right = right
+
+        assert isinstance(operator1_sym, str) and isinstance(operator2_sym, str)
+        self.operator1_sym = operator1_sym
+        self.operator2_sym = operator2_sym
+
+    def __str__(self):
+        return f'{self.left}{self.operator1_sym}{self.middle}{self.operator2_sym}{self.right}'
+
+
+class Bracket(Feature):
+    """ Abstract representation of a
+    """
+
+    def __init__(self, subject, left_bound, right_bound):
+        if not issubclass(subject.__class__, Concat) and not issubclass(subject.__class__, DefList):
+            raise GrammarException(f'{self.__class__.__name__} objects require a Concat or DefList as the subject.')
+
+        self.subject = subject
+
+        assert isinstance(left_bound, str) and isinstance(right_bound, str)
+        self.left_bound = left_bound
+        self.right_bound = right_bound
+
+    def __str__(self):
+        return f'{self.left_bound}{self.subject}{self.right_bound}'
+
+    def __eq__(self, other):
+        return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
+               self.subject == other.subject
 
 
 class Symbol(Feature):
@@ -34,7 +106,8 @@ class Symbol(Feature):
 
     """
 
-    def __init__(self, subject, left_bound='', right_bound=''):
+    def __init__(self, subject, left_bound, right_bound):
+        assert isinstance(left_bound, str) and isinstance(right_bound, str)
         self.subject = subject
         self.left_bound = left_bound
         self.right_bound = right_bound
@@ -76,23 +149,6 @@ class NonTerminal(Symbol):
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
 
 
-class Bracket(Feature):
-    """ Abstract representation of a
-    """
-
-    def __init__(self, subject, left_bound='', right_bound=''):
-        self.subject = subject
-        self.left_bound = left_bound
-        self.right_bound = right_bound
-
-    def __str__(self):
-        return f'{self.left_bound}{self.subject}{self.right_bound}'
-
-    def __eq__(self, other):
-        return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
-               self.subject == other.subject
-
-
 class Optional(Bracket):
 
     def __init__(self, subject, left_bound='[', right_bound=']'):
@@ -109,17 +165,6 @@ class Repetition(Bracket):
 
     def __init__(self, subject, left_bound='{', right_bound='}'):
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
-
-
-class BinaryOperator(Feature):
-
-    def __init__(self, left, right, operator):
-        self.left = left
-        self.right = right
-        self.operator = operator
-
-    def __str__(self):
-        return f'{self.left}{self.operator}{self.right}'
 
 
 class Except(BinaryOperator):
@@ -196,7 +241,21 @@ class Sequence:
 class Concat(Sequence):
 
     def __init__(self, terms, separator=' '):
-        super().__init__(terms, separator)
+        if not isinstance(terms, list):
+            print('hi')
+            if not issubclass(terms.__class__, Feature):
+                raise GrammarException(f'{self.__class__.__name__} objects may only contain Feature or DefList objects.')
+            self.terms = [terms]
+        elif issubclass(terms.__class__, self.__class__):
+            self.terms = terms.terms
+        else:
+            for term in terms:
+                if not issubclass(term.__class__, Feature):
+                    raise GrammarException(f'{self.__class__.__name__} objects may only contain Feature or DefList objects.')
+
+            self.terms = terms
+
+        self.separator = separator
 
 
 class DefList(Sequence):
@@ -207,6 +266,7 @@ class DefList(Sequence):
     def __str__(self):
         """ Override Sequence __str__ to ensure nice spacing. """
         return f' {self.separator} '.join(str(term) for term in self.terms)
+
 
 class DefinitionList:
     """ Represents a sequence of definitions A | B | ... | M.
@@ -587,7 +647,6 @@ class Metalanguage:
                 for j in range(0, len(rule.right[i])):
                     rule.right[i][j] = self.normalise_term(rule.right[i][j])
 
-
     def export_ruleset(self, path):
         serialised_grammar = str(self.ruleset)
         f = open(path, 'w')
@@ -750,7 +809,6 @@ class Metalanguage:
     def test(self, rule):
         rule.right[0] = 'hi'
 
-
     def normalise_term(self, term):
         """ Recursively normalise a term and all of its sub-terms so that they abide by self.syntax.
 
@@ -780,15 +838,13 @@ class Metalanguage:
 
 if __name__ == '__main__':
     a = Sequence([NonTerminal('a')])
-    gr = Group(
-        Sequence([
-            DefList([
-                Sequence([Terminal('b')]),
-                Sequence([Terminal('c')])
-            ]),
-            Terminal('d')
-        ])
-    )
+    c = Terminal('c')
+    o = Operator(NonTerminal('c'), operator_sym='*')
+    print('ye')
+    print(o + o)
+    print(issubclass(c.__class__, Feature))
+    d = Sequence([c])
+    gr = Group(Concat(c))
 
     r3 = Rule(
         NonTerminal('a'),
@@ -810,8 +866,10 @@ if __name__ == '__main__':
 
     r = Rule(
         a,
-        DefinitionList([def1, def2])
+        [def1, def2]
     )
+    print('r:')
+    print(r)
 
     r1 = Rule(
         Sequence('a'),

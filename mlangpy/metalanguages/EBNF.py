@@ -19,7 +19,7 @@ class EBNFNonTerminal(NonTerminal):
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
 
 
-class EBNFSequence(Sequence):
+class EBNFConcat(Sequence):
 
     def __init__(self, terms, separator=', '):
         super().__init__(terms, separator=separator)
@@ -48,7 +48,7 @@ class EBNF(Metalanguage):
     def __init__(self, ruleset: Ruleset, normalise=False):
         super().__init__(ruleset, syntax_dict={
                 # Core
-                Sequence: EBNFSequence,
+                Sequence: Concat,
                 DefinitionList: EBNFDefinitionList,
                 Rule: EBNFRule,
                 Terminal: EBNFTerminal,

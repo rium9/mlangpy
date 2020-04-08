@@ -3,7 +3,7 @@ from mlangpy.grammar import *
 from mlangpy.metalanguages.EBNF import *
 from mlangpy.metalanguages.RBNF import *
 from mlangpy.metalanguages.BNF import *
-#from mlangpy.metalanguages.ABNF import *
+from mlangpy.metalanguages.ABNF import *
 
 
 def validate_ABNF_faithful(grammar_string):
@@ -104,7 +104,9 @@ class BuildEBNF(Transformer):
 
 
 class BuildABNF(Transformer):
-    pass
+
+    def start(self, args):
+        return ABNF
 
 
 class BuildRBNF(Transformer):
@@ -214,8 +216,14 @@ if __name__ == '__main__':
 
     f = open('../sample_grammars/abnfs/abnf1.txt').read()
     print(validate_ABNF(f).pretty())
-    g = open('../sample_grammars/ebnfs/ebnf_self_define_no_comments.txt').read()
-    print(validate_EBNF(g).pretty())
+
+    a = ABNFChar('d', 100)
+    b = ABNFChar('d', 110)
+    x = ABNFTerminal('hello')
+    c = ABNFCharRange(a, b)
+    d = ABNFRepetition(1, '', x)
+    print(d)
+    print(c)
 
 
 
