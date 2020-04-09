@@ -1,3 +1,5 @@
 comment =  ";" *(WSP / VCHAR) CRLF
-repeat = 1*2DIGIT / (*DIGIT "*" *DIGIT)
+repeat = ;hi
+    1*2DIGIT / (*DIGIT "*" *DIGIT)
 char-val =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
+repeat =/ "hi"

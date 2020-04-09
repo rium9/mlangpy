@@ -102,8 +102,9 @@ bin_range: BIN_NUM _NUM_RANGE BIN_NUM
 // =====================================================================
 //       Part 3: Defining the abstract syntax of ABNF
 // =====================================================================
-syntax: (rule | c_nl)+
-rule: rulename (inc_defined_as | defined_as) elements c_nl
+syntax: (rule | inc_rule | c_nl)+
+rule: rulename (_DEF_SYM c_nl*) elements c_nl
+inc_rule: rulename (_INCDEF_SYM c_nl*) elements c_nl
 
 // Commenting/formatting
 c_nl: comment | NEWLINE
@@ -115,7 +116,7 @@ RULE_STR: ALPHA (ALPHA | DIGIT | "-")*
 rulename: RULE_STR
 
 // Definition symbols
-inc_defined_as: _INCDEF_SYM
+inc_defined_as: _INCDEF_SYM c_nl*
 defined_as: _DEF_SYM c_nl*
 
 // RHS of rules

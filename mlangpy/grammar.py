@@ -404,11 +404,14 @@ class Ruleset:
     """
 
     def __init__(self, rules):
+        if not (issubclass(rules.__class__, list) or isinstance(rules, OrderedSet)):
+            raise GrammarException('A Ruleset requires a list-like object as its rules argument.')
 
         if isinstance(rules, list):
             self.rules = OrderedSet(rules)
         else:
             self.rules = rules
+
 
     def load_rules(self, rules):
         """ Load in a list of Rule objects.
@@ -531,7 +534,7 @@ class Metalanguage:
         syntax (dict):      A number of syntax settings.
     """
 
-    def __init__(self, ruleset, syntax_dict=None, normalise=True):
+    def __init__(self, ruleset, syntax_dict=None, normalise=False):
         """ Initialise a metalanguage with a ruleset and optionally a syntax dictionary. The syntax dictionary
         may be customised to change the form of specific features, e.g. to comply with a specification such
         as EBNF, ABNF or RBNF.
