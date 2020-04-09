@@ -104,9 +104,10 @@ class BuildEBNF(Transformer):
 
 
 class BuildABNF(Transformer):
+    """ Generate a metalanguages.ABNF.ABNF instance from a parse tree built using abnf.lark. """
 
     def start(self, args):
-        return ABNF
+        return ABNF(args[0])
 
 
 class BuildRBNF(Transformer):
@@ -216,16 +217,16 @@ if __name__ == '__main__':
 
     f = open('../sample_grammars/abnfs/abnf1.txt').read()
     print(validate_ABNF(f).pretty())
+    p = validate_ABNF(f)
+    print(p)
+    abnf = BuildABNF().transform(p)
+    print(abnf.ruleset)
 
     a = ABNFChar('d', 100)
     b = ABNFChar('d', 110)
     x = ABNFTerminal('hello')
     c = ABNFCharRange(a, b)
-    d = ABNFRepetition(1, '', x)
+    d = ABNFRepetition(x, left=0, right=1)
     print(d)
     print(c)
-
-
-
-
 
