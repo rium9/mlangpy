@@ -72,8 +72,9 @@ Some implicit consequences of these limitations:
 they won't accept `Concat` or `DefList` instances as arguments.
 
 #### Examples
+
+Building and inspecting a rule:
 ```python
-#==================Building a rule================
 from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
     Optional, Ruleset
 
@@ -91,30 +92,51 @@ r = Rule(
 )
 print(r)    # /name/ -> [A] dog
 
-# ================Inspecting a rule===============
 print(r.left)        # /name/
 print(r.right)       # [A] dog (The DefList)
 print(r.right[0])    # [A] dog (The first Concat in the DefList)
 print(r.right[0][0]) # [A]     (The first Feature in the Concat)
+```
 
+Loading rules into a Metalanguage instance:
+```python
+from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
+    Optional, Ruleset
+from mlangpy.metalanguages import Metalanguage
+from copy import deepcopy
 
-# ===Loading rules into a metalanguage instance===
-from mlangpy.metalanguages import *
+n = NonTerminal('name')
+t1 = Terminal('A')
+t2 = Terminal('dog')
+o = Optional(Concat([t1]))
+
+r = Rule(
+    n,
+    Concat([
+        o, t2
+    ])
+)
+
 ruleset = Ruleset([r])
 m = Metalanguage(ruleset)
 print(m.ruleset)    # /name/ -> [A] dog
 
-r2 = Rule(
-    NonTerminal('x'),
-    [Concat(t1), Concat(t2)]
-)
-print(r2)           # /x/ -> A | dog
+r2 = deepcopy(r)
+r2.left[0] = NonTerminal('x')
+r2.right[0][0] = t1
+
 m.ruleset += r2
 print(m.ruleset)    # /name/ -> [A] dog
                     # /x/ -> A | dog
+```
 
-# ==========Swap to a different syntax============
+Swap to a different syntax:
+```python
 from mlangpy.metalanguages.EBNF import EBNFRule, EBNFNonTerminal
+from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
+    Optional, Ruleset
+
+
 
 class MyTerminal(Terminal):
     def __init__(self, subject):
