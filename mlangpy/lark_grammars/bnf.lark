@@ -1,15 +1,48 @@
-syntax: syntax_rule+
-syntax_rule: non_terminal "::=" def_list
+// The following grammar recognises loosely-formatted BNF grammars. It
+// is very minimalist and attempts to capture the original, informal
+// definition given in the ALGOL60 report.
 
-def_list: def ("|" def)*
-def: term+
-term: non_terminal | terminal
-non_terminal: "<" WORD (" " WORD)* ">"
-terminal: WORD
+// The structure of this grammar reflects that of abnf.lark in order
+// increase compatibility; the ideal goal is to be able to automatically
+// generate grammars for metalanguages containing some subset of features
+// included in ABNF, EBNF etc.
 
-PRODUCTION: "::="
-ALT: "|"
-L_BOUND: "<"
-R_BOUND: ">"
+%import common.NEWLINE
+%ignore " "
+%ignore NEWLINE
 
-%import common.WORD
+start: syntax
+
+
+// =====================================================================
+//            Part 1: defining the roles of characters in BNF
+// =====================================================================
+_DEF_SYM:   "::="
+_ALT_SYM:   "|"
+_START_NT:  "<"
+_END_NT:    ">"
+
+// =====================================================================
+//        Part 2: defining which characters can appear in features
+// =====================================================================
+
+// Allow terminals and non-terminals to contain any symbol except
+// ">", "<", "|" and "::=".
+STRING: /[^><|"::="]+/
+
+// =====================================================================
+//       Part 3: Defining the abstract syntax of ABNF
+// =====================================================================
+syntax: rule+
+rule: non_terminal _DEF_SYM elements
+
+// Terminals and non-terminals
+non_terminal: _START_NT STRING _END_NT
+terminal: STRING
+
+// RHS of rules
+elements: alternation
+alternation: concatenation (_ALT_SYM concatenation)*
+concatenation: element (" "+ element)*
+element: non_terminal | terminal
+

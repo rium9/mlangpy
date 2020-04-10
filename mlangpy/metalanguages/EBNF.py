@@ -1,5 +1,5 @@
 from ..grammar import *
-
+from .Metalanguage import Metalanguage
 
 class EBNFTerminal(Terminal):
 

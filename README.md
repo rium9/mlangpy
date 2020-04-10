@@ -71,10 +71,12 @@ Some implicit consequences of these limitations:
 * Precedence has to be made explicit for operators (i.e. via bracketing) since
 they won't accept `Concat` or `DefList` instances as arguments.
 
-Building a rule:
-```
+#### Examples
+```python
+#==================Building a rule================
 from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
-    Optional, Ruleset, Metalanguage
+    Optional, Ruleset
+
 
 n = NonTerminal('name')
 t1 = Terminal('A')
@@ -88,25 +90,30 @@ r = Rule(
     ])
 )
 print(r)    # /name/ -> [A] dog
-```
 
-Inspecting a rule:
-```
+# ================Inspecting a rule===============
 print(r.left)        # /name/
 print(r.right)       # [A] dog (The DefList)
 print(r.right[0])    # [A] dog (The first Concat in the DefList)
 print(r.right[0][0]) # [A]     (The first Feature in the Concat)
-```
 
-Loading rules into a metalanguage instance:
-```
+
+# ===Loading rules into a metalanguage instance===
+from mlangpy.metalanguages import *
 ruleset = Ruleset([r])
 m = Metalanguage(ruleset)
 print(m.ruleset)    # /name/ -> [A] dog
-```
 
-Swap to a different syntax:
-```
+r2 = Rule(
+    NonTerminal('x'),
+    [Concat(t1), Concat(t2)]
+)
+print(r2)           # /x/ -> A | dog
+m.ruleset += r2
+print(m.ruleset)    # /name/ -> [A] dog
+                    # /x/ -> A | dog
+
+# ==========Swap to a different syntax============
 from mlangpy.metalanguages.EBNF import EBNFRule, EBNFNonTerminal
 
 class MyTerminal(Terminal):
@@ -128,4 +135,25 @@ Using the Lark parser, grammars can be passed as strings and a `Ruleset` or `Met
 `metaparsers.py` shows how Lark `Transformer` subclasses can be used to convert serialised grammars to objects we
 can work with.
 
-`TODO`
+```python
+from mlangpy.metaparsers import parse_BNF, parse_ABNF
+
+bnf = parse_BNF('<a> ::= test')
+print(bnf.ruleset)
+
+abnf = parse_ABNF('''
+    comment =  ";" *(WSP / VCHAR) CRLF
+    repeat = ;hi
+        1*2DIGIT / (*DIGIT "*" *DIGIT)
+    char-val =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
+    repeat =/ "hi"
+''')
+print(abnf.ruleset)
+```
+
+It should be noted that `grammar.py` does not have facilities for comments - since comments are meta-constructs (they give
+information about the grammar), they don't really fit in the model. A way that this could be implemented is by
+allowing `Rule` instances to reference comment objects.
+
+If you want to parse some other metalanguage, you'll need to write your own lark grammar, or you can let me know and I might
+implement it.
