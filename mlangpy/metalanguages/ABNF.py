@@ -1,4 +1,5 @@
 from ..grammar import *
+from .Metalanguage import Metalanguage
 
 # We don't need to define new classes for Concat, Group or Optional - the syntax is the same.
 
@@ -48,7 +49,7 @@ class ABNFRepetition(TernaryOperator):
         self.compact = compact
 
     def __str__(self):
-        if self.compact and self.left == self.middle:
+        if self.compact and self.left != '' and self.left == self.middle:
             return f'{self.left}{self.right}'
         else:
             return super().__str__()
@@ -59,8 +60,6 @@ class ABNFChar(Terminal):
     def __init__(self, denom, subject, left_bound='', right_bound='', char_sym='%'):
         self.denom = denom
         self.char_sym = char_sym
-        if not isinstance(subject, int):
-            raise GrammarException(f'{self.__class__.__name__} must have an integer as the subject.')
         super().__init__(str(subject), left_bound=left_bound, right_bound=right_bound)
 
     def __str__(self):

@@ -1,4 +1,5 @@
 from ..grammar import *
+from .Metalanguage import Metalanguage
 
 symbols_mapping = {
     ';': 'SEMICOL',

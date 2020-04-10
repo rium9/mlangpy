@@ -106,7 +106,7 @@ class Symbol(Feature):
 
     """
 
-    def __init__(self, subject, left_bound, right_bound):
+    def __init__(self, subject, left_bound='', right_bound=''):
         assert isinstance(left_bound, str) and isinstance(right_bound, str)
         self.subject = subject
         self.left_bound = left_bound
@@ -174,6 +174,7 @@ class Except(BinaryOperator):
 
 
 class Sequence:
+    """ Abstract representation of a sequence of Features. """
 
     def __init__(self, terms, separator=' '):
         # Sequence can be initialised:
@@ -242,16 +243,17 @@ class Concat(Sequence):
 
     def __init__(self, terms, separator=' '):
         if not isinstance(terms, list):
-            print('hi')
-            if not issubclass(terms.__class__, Feature):
-                raise GrammarException(f'{self.__class__.__name__} objects may only contain Feature or DefList objects.')
+            #if not issubclass(terms.__class__, Feature):
+            #    raise GrammarException(f'{self.__class__.__name__} objects may only contain Feature or DefList objects.')
             self.terms = [terms]
         elif issubclass(terms.__class__, self.__class__):
             self.terms = terms.terms
         else:
-            for term in terms:
-                if not issubclass(term.__class__, Feature):
-                    raise GrammarException(f'{self.__class__.__name__} objects may only contain Feature or DefList objects.')
+            #for term in terms:
+            #    if not issubclass(term.__class__, Feature):
+            #        raise GrammarException(
+            #            f'Lists used to instantiate {self.__class__.__name__} objects must only contain Feature or DefList objects.'
+            #        )
 
             self.terms = terms
 
@@ -261,6 +263,9 @@ class Concat(Sequence):
 class DefList(Sequence):
 
     def __init__(self, terms, separator='|'):
+        for term in terms:
+            if not issubclass(term.__class__, Concat):
+                raise GrammarException(f'{self.__class__.__name__} requires that all terms be Concat instances.')
         super().__init__(terms, separator=separator)
 
     def __str__(self):
@@ -366,9 +371,9 @@ class Rule:
         # If right isn't a list or a DefinitionList, put it in a Sequence on its own and use it to instantiate a DL,
         # If right is a DefinitionList, it's fine the way it is.
         if isinstance(right, list):
-            self.right = DefinitionList(right)
-        elif not issubclass(right.__class__, DefinitionList):
-            self.right = DefinitionList([right])
+            self.right = DefList(right)
+        elif not issubclass(right.__class__, DefList):
+            self.right = DefList([right])
         else:
             self.right = right
 
@@ -388,10 +393,10 @@ class Rule:
         return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
                self.right == other.right
 
-    __hash__ = object.__hash__
+    def is_equivalent(self, other):
+        return self.right == other.right
 
 
-# TODO update to use OrderedSets or something
 class Ruleset:
     """ A class representing a collection of Rule objects.
 
@@ -404,23 +409,13 @@ class Ruleset:
     """
 
     def __init__(self, rules):
-        if not (issubclass(rules.__class__, list) or isinstance(rules, OrderedSet)):
-            raise GrammarException('A Ruleset requires a list-like object as its rules argument.')
+        for rule in rules:
+            if not issubclass(rule.__class__, Rule):
+                raise GrammarException(
+                    'A Ruleset requires a list-like object containing only Rule instances as its rules paramater.'
+                )
 
-        if isinstance(rules, list):
-            self.rules = OrderedSet(rules)
-        else:
-            self.rules = rules
-
-
-    def load_rules(self, rules):
-        """ Load in a list of Rule objects.
-
-        Args:
-            rules (list of Rules): A list of Rule objects.
-
-        """
-        self.rules = rules
+        self.rules = list(rules)
 
     def add_rule(self, rule):
         """ Add a new rule to the ruleset.
@@ -441,9 +436,20 @@ class Ruleset:
         ret = []
         for r in self.rules:
             if r == rule:
-                ret += r
+                ret.append(r)
 
         return ret
+
+    def find_rules_for(self, def_list):
+        """ Returns rules whose right-hand side is equal to def_list.
+
+        Args:
+            def_list: The definition list to find rules for.
+        """
+        if not issubclass(def_list.__class__, DefList):
+            raise GrammarException('The right-hand side of a rule must be a DefList.')
+
+        return [rule for rule in self.rules if rule.right == def_list]
 
     def rule_exists(self, new_rule):
         """ Returns True if new_rule already exists in the ruleset.
@@ -467,11 +473,11 @@ class Ruleset:
 
         """
         for rule in self.rules:
-            if production != None:
+            if production:
                 rule.prod = production
-            if alternation != None:
+            if alternation:
                 rule.right.alt = alternation
-            if terminator != None:
+            if terminator:
                 rule.terminator = terminator
 
     def __str__(self):
@@ -505,437 +511,26 @@ class Ruleset:
     def __setitem__(self, index: int, value):
         self.rules[index] = value
 
-    def __add__(self, other) -> 'Ruleset':
+    def __add__(self, other):
         # Addition is only defined for Rulesets and Rules.
         if issubclass(other.__class__, Ruleset):
-            return self.__class__(self.rules | other.rules)
+            return self.__class__(self.rules + other.rules)
         elif issubclass(other.__class__, Rule):
             if self.rule_exists(other):
                 return self
-            return self.__class__(self.rules | OrderedSet([other]))
+            return self.__class__(self.rules + [other])
         else:
             raise NotImplemented
 
     def __radd__(self, other):
         # Addition is only defined for Rulesets and Rules
         if issubclass(other.__class__, Ruleset):
-            return self.__class__(other.rules | self.rules)
+            return self.__class__(other.rules + self.rules)
         elif issubclass(other.__class__, Rule):
-            return self.__class__(OrderedSet([other]) | self.rules)
+            return self.__class__([other] + self.rules)
         else:
             raise NotImplemented
 
 
-class Metalanguage:
-    """ The Metalanguage class provides a base for representing various metalanguages.
-
-    Attributes:
-        ruleset (Ruleset):  A set of production rules.
-        syntax (dict):      A number of syntax settings.
-    """
-
-    def __init__(self, ruleset, syntax_dict=None, normalise=False):
-        """ Initialise a metalanguage with a ruleset and optionally a syntax dictionary. The syntax dictionary
-        may be customised to change the form of specific features, e.g. to comply with a specification such
-        as EBNF, ABNF or RBNF.
-
-        Args:
-            ruleset (Ruleset):  A Ruleset instance.
-            syntax_dict:        A dictionary of syntax settings. Defaults are accessed by passing None.
-            normalise:          Set to True to immediately attempt to normalise the Ruleset to correspond to syntax
-                                settings.
-        """
-        self.ruleset = copy.deepcopy(ruleset)
-        if not syntax_dict:
-            self.syntax = {
-                # Essential for all grammars
-                Sequence: Sequence,
-                DefinitionList: DefinitionList,
-                Rule: Rule,
-                Terminal: Terminal,
-                NonTerminal: NonTerminal,
-
-                # Auxiliary stuff
-                Optional: Optional,
-                Group: Group,
-                Repetition: Repetition
-            }
-        else:
-            self.syntax = syntax_dict
-
-        self.op_count = 0
-        self.rep_count = 0
-        self.grp_count = 0
-
-        if normalise: self.normalise()
-
-    # TODO Method for automatically creating a lark file for recognising grammars using the current
-    #       syntax of the Metalanguage instance. However, on its own the grammar won't be able to be
-    #       used to generate a Ruleset instance since a Transformer subclass is needed, with method
-    #       names corresponding to the lark file and non-terminal names. For this we need:
-    #           a) a 'standard' for lark files, such that e.g. an EBNF grammar is a superset of
-    #               a BNF grammar.
-    #           b) a metaprogram that can, given information about a lark file, generate a Transformer
-    #               subclass for said lark file.
-    def build_lark_grammar(self):
-        """ Create a lark file that will recognise grammars of the Metalanguage instance's syntax. """
-
-        # Instantiate instances of syntax objects so we can see their notation
-        nt = self.syntax[NonTerminal]('')
-        t = self.syntax[Terminal]('')
-        seq = self.syntax[Sequence]([])
-        def_list = self.syntax[DefinitionList]([])
-
-        rule = self.syntax[Rule]([], [])
-        if rule.terminator.strip():
-            terminator = rule.terminator
-        else:
-            terminator = '(" "|/' + '\t' + '/)'
-
-        r = f'''
-        syntax: syntax_rule+
-        syntax_rule: non_terminal _PRODUCTION def_list " " ~ 1
-
-        def_list: def (_ALTERNATE def)
-        def: term (_CONCATENATE term)*
-
-        term: non_terminal | terminal
-        non_terminal: _NT_LEFT_BOUND WORD (" " WORD)* _NT_RIGHT_BOUND
-        terminal: _T_LEFT_BOUND WORD _T_RIGHT_BOUND
-
-
-        _PRODUCTION:        "{rule.prod}"
-        _TERMINATOR:        "{terminator}"
-        _ALTERNATE:         "{def_list.alt}"
-        _CONCATENATE:       "{seq.separator}"
-        _NT_LEFT_BOUND:     "{nt.left_bound}"
-        _NT_RIGHT_BOUND:    "{nt.right_bound}"
-        _T_LEFT_BOUND:      "{t.left_bound}"
-        _T_RIGHT_BOUND:     "{t.right_bound}"
-
-        %import common.WORD
-        '''
-        return textwrap.dedent(r)
-
-    def export_lark_file(self, filename):
-        f = open(filename, 'w')
-        f.write(self.build_lark_grammar())
-
-    def normalise(self):
-        """ Convert the ruleset so that it complies with self.syntax. """
-
-        # Instantiate an empty rule of the form stored in the syntax dictionary to access production, alternation
-        # and termination symbols
-        rf = self.syntax[Rule]([], [])
-
-        # Update the form of rules
-        self.ruleset.update_rules(production=rf.prod, alternation=rf.right.alt, terminator=rf.terminator)
-
-        # Now, go through each rule (LHS and RHS) and transform features to their
-        # corresponding notations in self.syntax
-
-        # TODO implement dunder methods for Ruleset to make nicer iterations
-        for rule in self.ruleset:
-
-            # Handle left-hand side
-            rule.left = self.syntax[Sequence](rule.left.terms)
-            for i in range(0, len(rule.left)):
-                for feature in self.syntax:
-                    if isinstance(rule.left[i], feature):
-                        rule.left[i] = self.syntax[feature](rule.left[i].subject)
-
-            # Handle right-hand side
-            for i in range(0, len(rule.right)):
-                rule.right[i] = self.syntax[Sequence](rule.right[i].terms)
-                for j in range(0, len(rule.right[i])):
-                    rule.right[i][j] = self.normalise_term(rule.right[i][j])
-
-    def export_ruleset(self, path):
-        serialised_grammar = str(self.ruleset)
-        f = open(path, 'w')
-        f.write(serialised_grammar)
-
-    def eliminate_optionals(self):
-
-        # TODO implement dunder methods for Ruleset to make nicer iterations
-        # Iterate over each rule
-        for rule in self.ruleset:
-            # Inspect each definition (Sequence) in the DefinitionList
-            for definition in rule.right:
-                # Check all members of the definition, formulate a new rule if necessary
-                for i in range(0, len(definition)):
-                    if isinstance(definition[i], Optional):
-                        new_nt = NonTerminal(f'op {definition[i]}')
-
-                        # New rule:
-                        #   B -> a |
-                        new_rule = self.syntax[Rule](
-                            self.syntax[Sequence]([new_nt]),
-                            self.syntax[DefinitionList]([
-                                self.syntax[Sequence]([definition[i].subject]),
-                                self.syntax[Sequence]([])
-                            ])
-                        )
-
-                        # A -> B
-                        definition[i] = new_nt
-
-                        # Add new rule if necessary
-                        # TODO This can be eliminated by using ordered sets
-                        self.ruleset += new_rule
-
-    def eliminate_repetition(self):
-        for rule in self.ruleset:
-            for definition in rule.right:
-                for i in range(0, len(definition)):
-                    if isinstance(definition[i], Repetition):
-                        pass  # TODO
-
-    def eliminate_groups(self):
-
-        for rule in self.ruleset:
-            for definition in rule.right:
-                for i in range(0, len(definition)):
-                    if issubclass(definition[i].__class__, Group):
-                        new_nt = NonTerminal(f'grp {definition[i]}')
-
-                        new_rule = self.syntax[Rule](
-                            self.syntax[Sequence]([new_nt]),
-                            self.syntax[DefinitionList]([
-                                self.syntax[Sequence](definition[i].subject)
-                            ])
-                        )
-
-                        definition[i] = new_nt
-                        self.ruleset += new_rule
-
-    def eliminate_alternation(self):
-        # TODO implement dunder methods for Ruleset to make nicer iterations
-        new_rules = OrderedSet()
-        for rule in self.ruleset:
-            for sequence in rule.right:
-                new_rules |= {self.syntax[Rule](rule.left, self.syntax[DefinitionList]([sequence]))}
-
-        self.ruleset.rules = new_rules
-
-    def add_rule(self, rule):
-        self.ruleset.add_rule(rule)
-
-    def replace_feature(self, term, new_rule: Rule, name: NonTerminal):
-        """ Create a new rule intended to replace an existing feature
-                A ::= x term y  ->      A ::= x name y
-                                        new_rule        (should be equivalent to language represented by term).
-        """
-        pass
-
-    def remove_optionals_from_term(self, term, recursive=False):
-        new_rules = OrderedSet()
-
-        if issubclass(term.__class__, Optional):
-            new_nt = NonTerminal(f'op {term.subject}')
-            term = new_nt
-
-        return term, new_rules
-
-    def remove_optionals(self, rule):
-        for definition in rule.right:
-            for i in range(0, len(definition)):
-                if issubclass(definition[i].__class__, Optional):
-
-                    # check to see if there's a definition already
-                    looking_for = Rule([], [definition[i].subject, []])
-                    matching = self.ruleset.find_rules(looking_for)
-
-                    if matching:
-                        definition[i] = matching[0].left[0]
-                    else:
-                        new_nt = self.syntax[NonTerminal](f'op {self.op_count}')
-                        self.op_count += 1
-
-                        new_rule = self.syntax[Rule](
-                            new_nt,
-                            [definition[i].subject,
-                             []]
-                        )
-
-                        definition[i] = new_nt
-                        self.ruleset += new_rule
-
-    def remove_groups(self, rule):
-        for definition in rule.right:
-            for i in range(0, len(definition)):
-                if issubclass(definition[i].__class__, Group):
-
-                    # check to see if there's a definition already
-                    looking_for = Rule([], [definition[i].subject, []])
-                    matching = self.ruleset.find_rules(looking_for)
-
-                    if matching:
-                        definition[i] = matching[0].left[0]
-                    else:
-                        new_nt = self.syntax[NonTerminal](f'grp {self.grp_count}')
-                        self.grp_count += 1
-
-                        new_rule = self.syntax[Rule](
-                            new_nt,
-                            [definition[i].subject]
-                        )
-
-                        definition[i] = new_nt
-                        self.ruleset += new_rule
-
-    def remove_repetitions(self, rule):
-
-        for definition in rule.right:
-            for i in range(0, len(definition)):
-                if issubclass(definition[i].__class__, Repetition):
-
-                    # check to see if there's a definition already
-                    looking_for = Rule([], [definition[i].subject, []])
-                    matching = self.ruleset.find_rules(looking_for)
-
-                    if matching:
-                        definition[i] = matching[0].left[0]
-                        continue
-
-                    new_nt = self.syntax[NonTerminal](f'rep {self.rep_count}')
-                    self.rep_count += 1
-
-                    new_rule = self.syntax[Rule](
-                        new_nt,
-                        [[definition[i].subject, new_nt], []]
-                    )
-
-                    definition[i] = new_nt
-                    self.ruleset += new_rule
-
-    def test(self, rule):
-        rule.right[0] = 'hi'
-
-    def normalise_term(self, term):
-        """ Recursively normalise a term and all of its sub-terms so that they abide by self.syntax.
-
-        Args:
-             term (Sequence/DefinitionList/Feature): The term to be normalised.
-        """
-        new_term = term
-        for sy in self.syntax:
-            if isinstance(term, sy):
-                if isinstance(term, Sequence):
-                    children = []
-                    for t in term.terms:
-                        children.append(self.normalise_term(t))
-
-                    new_term = self.syntax[Sequence](children)
-                elif isinstance(term, DefinitionList):
-                    children = []
-                    for t in term.definitions:
-                        children.append(self.normalise_term(t))
-
-                    new_term = self.syntax[DefinitionList](children)
-                else:
-                    new_term = self.syntax[sy](self.normalise_term(term.subject))
-
-        return new_term
-
-
 if __name__ == '__main__':
-    a = Sequence([NonTerminal('a')])
-    c = Terminal('c')
-    o = Operator(NonTerminal('c'), operator_sym='*')
-    print('ye')
-    print(o + o)
-    print(issubclass(c.__class__, Feature))
-    d = Sequence([c])
-    gr = Group(Concat(c))
-
-    r3 = Rule(
-        NonTerminal('a'),
-        [Terminal('b'),
-         Terminal('c')]
-    )
-    print('r3:')
-    print(r3)
-
-    def1 = Sequence([
-        gr,
-        Terminal('e')
-    ])
-
-    def2 = Sequence([
-        Terminal('f'),
-        Terminal('g')
-    ])
-
-    r = Rule(
-        a,
-        [def1, def2]
-    )
-    print('r:')
-    print(r)
-
-    r1 = Rule(
-        Sequence('a'),
-        DefList([
-            Sequence(['b']),
-            Optional(gr)
-        ])
-    )
-
-    rs = Ruleset(OrderedSet([r1]))
-    print(rs)
-    print('========')
-    print(rs)
-    print('========')
-    m = Metalanguage(rs, normalise=False)
-    print('====unmodified grammar====')
-    print(m.ruleset)
-    print('====eliminating groups====')
-    m.eliminate_groups()
-    print(m.ruleset)
-    print('====eliminating alternation====')
-    m.eliminate_alternation()
-    print(m.ruleset)
-    print('====eliminating optionals====')
-    m.eliminate_optionals()
-    print(m.ruleset)
-    print('====eliminating groups (again)====')
-    m.eliminate_groups()
-    print(m.ruleset)
-
-    print(r1)
-    b = m.remove_optionals(r1)
-    print(b)
-
-    x = m.ruleset[2]
-
-
-    z = Concat([a, gr])
-    y = Sequence([a, gr])
-    x = DefList([a, gr])
-    print(y == z)
-    print(z == x)
-    print(y == x)
-    print(z)
-
-    r4 = Rule(
-        Sequence('a'),
-        DefList([
-            Sequence(['b']),
-            Group(Optional(Optional(gr))),
-            Optional(Optional(gr))
-        ])
-    )
-
-
-    print('======')
-    r4 = Rule(
-        Sequence('a'),
-        [
-            Sequence(['b']),
-            Group(Optional(Optional(gr))),
-            Optional(Optional(gr))
-        ]
-    )
-    m = Metalanguage(Ruleset([r4]))
-    print(m.ruleset)
+    pass

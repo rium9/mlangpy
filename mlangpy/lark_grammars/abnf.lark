@@ -68,7 +68,7 @@ _END_OPTION:   "]"
 _START_GROUP:  "("
 _END_GROUP:    ")"
 _COMMENT_SYM:  ";"
-_REPEAT:       "*"
+REPEAT:       "*"
 _TERMINATOR:   NEWLINE
 
 HEX_NUM: HEXDIG+
@@ -80,7 +80,8 @@ BIN_NUM: BIT+
 // =====================================================================
 prose_val: _START_PROSE PROSE_STR _END_PROSE
 PROSE_STR: (/[\u0020-\u003D]/ | /[\u003F-\u007E]/)+
-char_val: _DQUOTE (/[\u0020-\u0021]/ | /[\u0023-\u007E]/)+ _DQUOTE
+char_val: _DQUOTE CHAR_STR _DQUOTE
+CHAR_STR: (/[\u0020-\u0021]/ | /[\u0023-\u007E]/)+
 
 num_val: _NUM_SYMBOL (hex_val | dec_val | bin_val)
 
@@ -130,7 +131,7 @@ element: rulename | group | option
 repetition: repeat? element
 repeat: specific | variable
 specific: DEC_NUM
-variable: [DEC_NUM] _REPEAT [DEC_NUM]
+variable: DEC_NUM? REPEAT DEC_NUM?
 
 // Brackets
 option: _START_OPTION alternation _END_OPTION

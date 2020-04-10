@@ -6,47 +6,59 @@ from mlangpy.metalanguages.BNF import *
 from mlangpy.metalanguages.ABNF import *
 
 
+def validate_BNF(grammar_string):
+    l = Lark.open('./lark_grammars/bnf.lark', rel_to=__file__)
+    p = l.parse(grammar_string)
+    return p
+
+
 def validate_ABNF_faithful(grammar_string):
     l = Lark.open('./lark_grammars/abnf_faithful.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
+
 
 def validate_ABNF(grammar_string):
     l = Lark.open('./lark_grammars/abnf.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
 
+
 def validate_EBNF(grammar_string):
     l = Lark.open('./lark_grammars/ebnf2.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
 
+
 # TODO update for DefinitionLists
 class BuildBNF(Transformer):
 
     def start(self, args):
-        return Metalanguage(args[0])
+        return BNF(args[0], normalise=True)
 
     def syntax(self, args):
         return Ruleset(args)
 
-    def grammars__bnf__syntax_rule(self, args):
-        return Rule(Sequence([args[0]]), args[1])
+    def rule(self, args):
+        return Rule(args[0], args[1])
 
-    def grammars__bnf__non_terminal(self, args):
-        return NonTerminal(" ".join(args))
+    def non_terminal(self, args):
+        return NonTerminal(args[0])
 
-    def grammars__bnf__def_list(self, args):
-        return DefinitionList(args)
-
-    def grammars__bnf__def(self, args):
-        return Sequence(args)
-
-    def grammars__bnf__term(self, args):
+    def elements(self, args):
         return args[0]
 
-    def grammars__bnf__terminal(self, args):
-        return Terminal(" ".join(args))
+    def alternation(self, args):
+        return DefList(args)
+
+    def concatenation(self, args):
+        return Concat(args)
+
+    def element(self, args):
+        return args[0]
+
+    def terminal(self, args):
+        return Terminal(args[0])
 
 
 class BuildEBNF(Transformer):
@@ -109,6 +121,77 @@ class BuildABNF(Transformer):
     def start(self, args):
         return ABNF(args[0])
 
+    def syntax(self, args):
+        return Ruleset(args)
+
+    def rule(self, args):
+        return ABNFRule(args[0], args[1])
+
+    def inc_rule(self, args):
+        return ABNFIncRule(args[0], args[1])
+
+    def rulename(self, args):
+        return ABNFNonTerminal(args[0])
+
+    def elements(self, args):
+        return args[0]
+
+    def alternation(self, args):
+        return ABNFDefList(args)
+
+    def concatenation(self, args):
+        return Concat(args)
+
+    def repetition(self, args):
+        return args[0]
+
+    def element(self, args):
+        return args[0]
+
+    def char_val(self, args):
+        return ABNFTerminal(args[0])
+
+    def num_val(self, args):
+        return args[0]
+
+    def hex_val(self, args):
+        return args[0]
+
+    def hex_single(self, args):
+        return ABNFChar('h', args[0])
+
+    def hex_range(self, args):
+        return ABNFCharRange(ABNFChar('h', args[0]), ABNFChar('h', args[1]))
+
+    def c_nl(self, args):
+        raise Discard
+
+    def repetition(self, args):
+        if len(args) != 2:
+            return args[0]
+
+        rep_type_tree = args[0].children[0]
+        if rep_type_tree.data == 'specific':
+            return ABNFRepetition(args[1], left=int(rep_type_tree.children[0]), right=int(rep_type_tree.children[0]))
+        elif rep_type_tree.data == 'variable':
+            if len(rep_type_tree.children) == 3:
+                return ABNFRepetition(args[1], left=int(rep_type_tree.children[0]), right=int(rep_type_tree.children[2]))
+            elif len(rep_type_tree.children) == 1:
+                return ABNFRepetition(args[1])
+            else:
+                if rep_type_tree.children[0].type == 'DEC_NUM':
+                    return ABNFRepetition(args[1], left=int(rep_type_tree.children[0]))
+                else:
+                    return ABNFRepetition(args[1], right=int(rep_type_tree.children[1]))
+        else:
+            raise NotImplementedError()
+
+    def group(self, args):
+        return Group(args[0])
+
+    def option(self, args):
+        return Optional(args[0])
+
 
 class BuildRBNF(Transformer):
 
@@ -155,16 +238,8 @@ class BuildRBNF(Transformer):
         return RBNFRepetition(args[0])
 
 
-def parse_BNF(filename: Path) -> Metalanguage:
-    l = Lark(f'''start: syntax
-        %import .grammars.bnf.syntax
-        %import .common.NEWLINE
-        %ignore NEWLINE+
-        %ignore " "
-    ''')
-
-    grammar = open(filename).read()
-    parsed = l.parse(grammar)
+def parse_BNF(grammar_string) -> Metalanguage:
+    parsed = validate_BNF(grammar_string)
     return BuildBNF(visit_tokens=False).transform(parsed)
 
 
@@ -183,17 +258,9 @@ def parse_EBNF(filename) -> EBNF:
     return BuildEBNF(visit_tokens=False).transform(parsed)
 
 
-def parse_ABNF(filename: Path):
-    l = Lark('''start: syntax
-            %import .lark_grammars.abnf.syntax
-            %import .common.NEWLINE
-            %ignore NEWLINE
-            %ignore " "
-        ''')
-
-    grammar = open(filename).read()
-    parsed = l.parse(grammar)
-    print(parsed.pretty())
+def parse_ABNF(grammar_string):
+    parsed = validate_ABNF(grammar_string)
+    return BuildABNF().transform(parsed)
 
 
 def parse_RBNF(filename) -> RBNF:
@@ -215,18 +282,13 @@ if __name__ == '__main__':
 
     #ebnf = parse_EBNF('../sample_grammars/ebnfs/testing.txt')
 
-    f = open('../sample_grammars/abnfs/abnf1.txt').read()
-    print(validate_ABNF(f).pretty())
-    p = validate_ABNF(f)
-    print(p)
-    abnf = BuildABNF().transform(p)
+    abnf = parse_ABNF('''
+        comment =  ";" *(WSP / VCHAR) CRLF
+        repeat = ;hi
+            1*2DIGIT / (*DIGIT "*" *DIGIT)
+        char-val =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
+        repeat =/ "hi"
+    ''')
+    bnf = parse_BNF('<a> ::= test')
     print(abnf.ruleset)
-
-    a = ABNFChar('d', 100)
-    b = ABNFChar('d', 110)
-    x = ABNFTerminal('hello')
-    c = ABNFCharRange(a, b)
-    d = ABNFRepetition(x, left=0, right=1)
-    print(d)
-    print(c)
-
+    print(bnf.ruleset)
