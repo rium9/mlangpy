@@ -17,15 +17,14 @@ pip install ordered-sets
 pip install lark-parser
 ```
 
-Install mlangpy:
+`mlangpy` currently resides on Test PyPi. Install it using the command:
 
 ```
-pip install mlangpy
+pip install --index-url https://test.pypi.org/simple --no-deps mlangpy
 ```
 
 
-`mlangpy` relies entirely on [Lark](https://github.com/lark-parser/lark "Lark parser") for its parsing facilities, so it's recommended that you familiarise yourself with the Lark parser. 
-
+`mlangpy` relies heavily on the [Lark parser](https://github.com/lark-parser/lark "Lark parser") for its parsing facilities, so it's recommended that you familiarise yourself with it.
 ## Usages
 
 ### Validate Metalanguages 
@@ -77,7 +76,6 @@ Building and inspecting a rule:
 from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
     Optional, Ruleset
 
-
 n = NonTerminal('name')
 t1 = Terminal('A')
 t2 = Terminal('dog')
@@ -85,9 +83,9 @@ o = Optional(Concat([t1]))
 
 r = Rule(
     n,
-    Concat([
+    [Concat([
         o, t2
-    ])
+    ])]
 )
 print(r)    # /name/ -> [A] dog
 
@@ -111,9 +109,9 @@ o = Optional(Concat([t1]))
 
 r = Rule(
     n,
-    Concat([
+    [Concat([
         o, t2
-    ])
+    ])]
 )
 
 ruleset = Ruleset([r])
@@ -131,14 +129,29 @@ print(m.ruleset)    # /name/ -> [A] dog
 
 Swap to a different syntax:
 ```python
-from mlangpy.metalanguages.EBNF import EBNFRule, EBNFNonTerminal
+from mlangpy.metalanguages.EBNF import EBNFRule, EBNFNonTerminal, Metalanguage
 from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
     Optional, Ruleset
-
 
 class MyTerminal(Terminal):
     def __init__(self, subject):
         super().__init__(subject, left_bound='"', right_bound='"')
+
+
+n = NonTerminal('name')
+t1 = Terminal('A')
+t2 = Terminal('dog')
+o = Optional(Concat([t1]))
+
+r = Rule(
+    n,
+    Concat([
+        o, t2
+    ])
+)
+
+ruleset = Ruleset([r])
+m = Metalanguage(ruleset)
 
 m.syntax[Rule] = EBNFRule
 m.syntax[NonTerminal] = EBNFNonTerminal
