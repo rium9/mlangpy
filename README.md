@@ -49,7 +49,6 @@ z = validate_EBNF('''
 print(z.pretty())
 ```
 
-
 ### Model grammars and grammatical features, independent of syntax
 
 `mlangpy` includes classes for modelling all aspects of a grammars, from (non-)terminal symbols up to entire rules, with
@@ -135,7 +134,6 @@ Swap to a different syntax:
 from mlangpy.metalanguages.EBNF import EBNFRule, EBNFNonTerminal
 from mlangpy.grammar import NonTerminal, Terminal, Rule, Concat, \
     Optional, Ruleset
-
 
 
 class MyTerminal(Terminal):
