@@ -8,24 +8,29 @@ from mlangpy.metalanguages.ABNF import *
 
 def validate_BNF(grammar_string):
     l = Lark.open('./lark_grammars/bnf.lark', rel_to=__file__)
-    p = l.parse(grammar_string)
-    return p
+    return l.parse(grammar_string)
 
 
 def validate_ABNF_faithful(grammar_string):
     l = Lark.open('./lark_grammars/abnf_faithful.lark', rel_to=__file__)
-    p = l.parse(grammar_string)
-    return p
+    return l.parse(grammar_string)
 
 
 def validate_ABNF(grammar_string):
     l = Lark.open('./lark_grammars/abnf.lark', rel_to=__file__)
-    p = l.parse(grammar_string)
-    return p
+    return l.parse(grammar_string)
 
 
 def validate_EBNF(grammar_string):
-    l = Lark.open('./lark_grammars/ebnf2.lark', rel_to=__file__)
+    l = Lark.open('./lark_grammars/ebnf.lark', rel_to=__file__)
+    return l.parse(grammar_string)
+
+def validate_EBNF_faithful(grammar_string):
+    l = Lark.open('./lark_grammars/ebnf_faithful.lark', rel_to=__file__)
+    return l.parse(grammar_string)
+
+def validate_RBNF(grammar_string):
+    l = Lark.open('./lark_grammars/rbnf.lark', rel_to=__file__)
     p = l.parse(grammar_string)
     return p
 
@@ -34,16 +39,13 @@ def validate_EBNF(grammar_string):
 class BuildBNF(Transformer):
 
     def start(self, args):
-        return BNF(args[0], normalise=True)
+        return BNF(args[0])
 
     def syntax(self, args):
         return Ruleset(args)
 
     def rule(self, args):
-        return Rule(args[0], args[1])
-
-    def non_terminal(self, args):
-        return NonTerminal(args[0])
+        return BNFRule(args[0], args[1])
 
     def elements(self, args):
         return args[0]
@@ -57,8 +59,12 @@ class BuildBNF(Transformer):
     def element(self, args):
         return args[0]
 
+    def non_terminal(self, args):
+        return BNFNonTerminal(args[0])
+
     def terminal(self, args):
-        return Terminal(args[0])
+        return BNFTerminal(args[0])
+
 
 
 class BuildEBNF(Transformer):
@@ -201,40 +207,40 @@ class BuildRBNF(Transformer):
     def syntax(self, args):
         return Ruleset(args)
 
-    def lark_grammars__rbnf__syntax_rule(self, args):
-        return RBNFRule(RBNFSequence([args[0]]), args[1])
+    def rule(self, args):
+        return RBNFRule(args[0], args[1])
 
-    def lark_grammars__rbnf__def_list(self, args):
-        return DefinitionList(args)
-
-    def lark_grammars__rbnf__def(self, args):
-        return RBNFSequence(args)
-
-    def lark_grammars__rbnf__term(self, args):
+    def rulename(self, args):
         return args[0]
 
-    def lark_grammars__rbnf__terminal(self, args):
+    def message(self, args):
+        return RBNFMessage(args[0])
+
+    def elements(self, args):
         return args[0]
 
-    def lark_grammars__rbnf__object(self, args):
-        return RBNFObject("_".join(args))
+    def alternation(self, args):
+        return DefList(args)
 
-    def lark_grammars__rbnf__non_terminal(self, args):
+    def concatenation(self, args):
+        return Concat(args)
+
+    def element(self, args):
         return args[0]
 
-    def lark_grammars__rbnf__message(self, args):
-        return RBNFMessage(" ".join(args))
+    def object(self, args):
+        return RBNFObject(args[0])
 
-    def lark_grammars__rbnf__construct(self, args):
-        return RBNFConstruct(" ".join(args))
+    def construct(self, args):
+        return RBNFConstruct(args[0])
 
-    def lark_grammars__rbnf__grouped_sequence(self, args):
-        return Group(args[0])
-
-    def lark_grammars__rbnf__optional_sequence(self, args):
+    def option(self, args):
         return Optional(args[0])
 
-    def lark_grammars__rbnf__repeated_sequence(self, args):
+    def group(self, args):
+        return Group(args[0])
+
+    def repetition(self, args):
         return RBNFRepetition(args[0])
 
 
@@ -243,18 +249,8 @@ def parse_BNF(grammar_string) -> Metalanguage:
     return BuildBNF(visit_tokens=False).transform(parsed)
 
 
-def parse_EBNF(filename) -> EBNF:
-    # TODO come up with smart way of converting path (./grammars/bnf.lark) to importable form (.grammars.bnf)
-    l = Lark('''start: syntax
-        %import .lark_grammars.ebnf2.syntax
-        %import .common.NEWLINE
-        %ignore NEWLINE
-        %ignore " "
-    ''', keep_all_tokens=False)
-
-    grammar = open(filename).read()
-    parsed = l.parse(grammar)
-    print(parsed.pretty())
+def parse_EBNF(grammar_string) -> EBNF:
+    parsed = validate_EBNF(grammar_string)
     return BuildEBNF(visit_tokens=False).transform(parsed)
 
 
@@ -263,18 +259,9 @@ def parse_ABNF(grammar_string):
     return BuildABNF().transform(parsed)
 
 
-def parse_RBNF(filename) -> RBNF:
-    l = Lark('''start: syntax
-        %import .lark_grammars.rbnf.syntax
-        %import .common.NEWLINE
-        %ignore NEWLINE+
-        %ignore " "
-    ''')
-
-    grammar = open(filename).read()
-    parsed = l.parse(grammar)
-    print(parsed.pretty())
-    return BuildRBNF(visit_tokens=False).transform(parsed)
+def parse_RBNF(grammar_string) -> RBNF:
+    parsed = validate_RBNF(grammar_string)
+    return BuildRBNF().transform(parsed)
 
 
 if __name__ == '__main__':
@@ -289,6 +276,20 @@ if __name__ == '__main__':
         char-val =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
         repeat =/ "hi"
     ''')
-    bnf = parse_BNF('<a> ::= test')
-    print(abnf.ruleset)
+    print(validate_BNF(open('../sample_grammars/bnfs/if.txt').read()).pretty())
+    bnf = parse_BNF(open('../sample_grammars/bnfs/if.txt').read())
     print(bnf.ruleset)
+    bnf.syntax[Terminal] = RBNFObject
+    bnf.normalise()
+    rbnf = parse_RBNF(open('../sample_grammars/rbnfs/pathmessage.txt').read())
+    print(rbnf.ruleset)
+    rbnf.syntax[RBNFObject] = EBNFTerminal
+    rbnf.syntax[Repetition] = Operator
+    rbnf.normalise()
+    print(rbnf.ruleset)
+
+    #b = validate_ABNF_faithful(open('../sample_grammars/abnfs/core_abnf.txt').read())
+    #print(b.pretty())
+
+    c = validate_EBNF(open('../sample_grammars/ebnfs/ebnf_self_define.txt').read())
+    print(c.pretty())

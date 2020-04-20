@@ -147,11 +147,13 @@ class TestDefinitionList(TestCase):
 class TestRuleset(TestCase):
 
     def setUp(self):
-        # Example rules: Ruleset equality checks are recursive so using real Rules here would be silly
-        self.r1 = 'a -> b c | d'
-        self.r2 = 'x -> y | z'
-        self.r3 = 'y -> t y | '
-        self.ruleset = Ruleset(OrderedSet([self.r1, self.r2]))
+        # Example rules: Ruleset equality checks are recursive so just assume Rules are equal
+        self.r1 = Rule(
+            NonTerminal('a'),
+            [Concat([Terminal('b')])]
+        )
+        self.r2 = self.r1
+        self.ruleset = Ruleset([self.r1, self.r2])
 
     def test__eq__1(self):
         self.assertEqual(Ruleset([]), Ruleset([]))
@@ -160,7 +162,7 @@ class TestRuleset(TestCase):
         self.assertEqual(self.ruleset, self.ruleset)
 
     def test__eq__3(self):
-        new_rule = Ruleset(OrderedSet([self.r1, self.r2]))
+        new_rule = Ruleset([self.r1, self.r2])
         self.assertEqual(self.ruleset, new_rule)
 
     def test__eq__4(self):
@@ -178,40 +180,43 @@ class TestRuleset(TestCase):
             object + self.ruleset
 
     def test_addition3(self):
-        r = Rule(['a'], [['b']])
+        r = Rule(['a'], [Concat(['b'])])
         new_ruleset = Ruleset([]) + r
         assert len(new_ruleset) == 1
         self.assertTrue(new_ruleset.rules[0], Rule)
 
     def test_addition4(self):
-        r = Rule(['a'], [['b']])
+        r = Rule(['a'], [Concat(['b'])])
         new_ruleset = self.ruleset + r
         assert len(new_ruleset) == 3
         self.assertTrue(isinstance(new_ruleset.rules[2], Rule))
 
     def test_addition5(self):
-        r = Rule(['a'], [['b']])
+        r = Rule(['a'], [Concat(['b'])])
         new_ruleset = r + self.ruleset
         assert len(new_ruleset) == 3
         self.assertTrue(isinstance(new_ruleset.rules[0], Rule))
 
     # Test adding Rulesets together
     def test_addition6(self):
-        self.assertEqual(self.ruleset, self.ruleset + self.ruleset)
+        b = Ruleset(self.ruleset.rules + self.ruleset.rules)
+        self.assertEqual(self.ruleset + self.ruleset, b)
 
     def test_addition7(self):
-        n = Ruleset(['rule'])
+        r = Rule(NonTerminal('a'), [])
+        n = Ruleset([r])
         q = self.ruleset + n
-        self.assertEqual(q.rules[2], 'rule')
+        self.assertTrue(len(q.rules) == 3 and q.rules[2] == r)
 
     def test_addition8(self):
-        n = Ruleset(['rule'])
+        r = Rule(NonTerminal('a'), [])
+        n = Ruleset([r])
         q = n + self.ruleset
-        self.assertEqual(q.rules[0], 'rule')
+        self.assertEqual(len(q.rules) == 3 and q.rules[0], r)
 
     # Test __iadd__ for Rules
     def test_iaddition1(self):
-        r = Rule(['a'], [['b']])
+        r = Rule([NonTerminal('a')], [Concat(['b'])])
         new_ruleset = copy.deepcopy(self.ruleset)
         new_ruleset += r
 
@@ -220,11 +225,10 @@ class TestRuleset(TestCase):
 
     def test_iaddition2(self):
         new_ruleset = Ruleset([])
-        new_ruleset += Rule(['a'], [['b']])
+        new_ruleset += Rule([NonTerminal('a')], [Concat(['b'])])
 
         assert isinstance(new_ruleset, Ruleset)
         assert len(new_ruleset.rules) == 1
-
 
     # Test __iadd__ for Rulesets
     def test_iaddition3(self):
@@ -235,12 +239,13 @@ class TestRuleset(TestCase):
         assert len(clone.rules) == 2
 
     def test_iaddition4(self):
+        r = Rule(NonTerminal('a'), [])
         clone = copy.deepcopy(self.ruleset)
-        clone += Ruleset(['rule'])
+        clone += Ruleset([r])
 
         assert isinstance(clone, Ruleset)
         assert len(clone.rules) == 3
-        self.assertEqual(clone.rules[2], 'rule')
+        self.assertEqual(clone.rules[2], r)
 
     def test_iaddition5(self):
         with self.assertRaises(TypeError):
@@ -250,14 +255,36 @@ class TestRuleset(TestCase):
         with self.assertRaises(TypeError):
             self.ruleset += object()
 
-    def test_load_rules(self):
-        pass
+    def test_find_rules_for1(self):
+        looking_for = self.ruleset[0].right
+        matches = self.ruleset.find_rules_for(looking_for)
+        r = Rule(
+            NonTerminal('a'),
+            [Concat([Terminal('b')])]
+        )
+        self.assertIn(r, matches)
 
-    def test_add_rule(self):
-        pass
+    def test_find_rules_for2(self):
+        r = Rule(
+            NonTerminal('a'),
+            [Concat([Terminal('b')])]
+        )
+        looking_for = DefList([])
+        matches = self.ruleset.find_rules_for(looking_for)
+        self.assertEqual(len(matches), 0)
 
-    def test_rule_exists(self):
-        pass
+    def test_find_rules1(self):
+        looking_for = Rule(
+            NonTerminal('a'),
+            [Concat([Terminal('b')])]
+        )
+        matches = self.ruleset.find_rules(looking_for)
+        self.assertIn(looking_for, matches)
 
-    def test_update_rules(self):
-        pass
+    def test_find_rules2(self):
+        looking_for = Rule(
+            NonTerminal('c'),
+            [Concat([Terminal('b')])]
+        )
+        matches = self.ruleset.find_rules(looking_for)
+        self.assertNotIn(looking_for, matches)

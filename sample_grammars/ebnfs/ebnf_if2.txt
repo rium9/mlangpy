@@ -1,4 +1,5 @@
 (* simple if clause *)
-if clause = “if”, Boolean expression, {connective, Boolean expression}, “then” ;
-Boolean expression = “True” | “False” ;
-connective = (“and” | “or”), [“not”, "negative"] ;
+(* had to change the double quotes to normal ones, latex used a strange character *)
+if clause = "if", Boolean expression, {connective, Boolean expression}, "then" ;
+Boolean expression = "True" | "False" ;
+connective = ("and" | "or"), ["not", "negative"] ;

@@ -171,7 +171,7 @@ can work with.
 ```python
 from mlangpy.metaparsers import parse_BNF, parse_ABNF
 
-bnf = parse_BNF('<a> ::= test')
+bnf = parse_BNF(tests)
 print(bnf.ruleset)
 
 abnf = parse_ABNF('''

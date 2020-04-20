@@ -1,0 +1,7 @@
+ <ResvConf message> ::= <Common Header> [ <INTEGRITY> ]
+
+    <SESSION> <ERROR_SPEC>
+
+    <RESV_CONFIRM>
+
+    <STYLE> <flow descriptor list>
