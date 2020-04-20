@@ -41,16 +41,16 @@ class RBNFRule(Rule):
         super().__init__(left, right, production=production, terminator=terminator)
 
 
-class RBNFSequence(Sequence):
+class RBNFConcat(Concat):
 
     def __init__(self, terms, separator=' '):
         super().__init__(terms, separator=separator)
 
 
-class RBNFRepetition(Repetition):
+class RBNFRepetition(Operator):
 
-    def __init__(self, subject, left_bound='', right_bound=' ...'):
-        super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
+    def __init__(self, subject, operator_sym='...'):
+        super().__init__(subject, operator_sym=operator_sym)
 
 
 class RBNF(Metalanguage):
@@ -58,11 +58,12 @@ class RBNF(Metalanguage):
     def __init__(self, ruleset, normalise=False):
         super().__init__(ruleset, syntax_dict={
             # Essential to all grammars
-            Sequence: RBNFSequence,
-            DefinitionList: DefinitionList,
+            Concat: RBNFConcat,
+            DefList: DefList,
             Rule: RBNFRule,
-            Terminal: RBNFObject,
-            NonTerminal: RBNFConstruct,
+            RBNFObject: RBNFObject,
+            RBNFConstruct: RBNFConstruct,
+            RBNFMessage: RBNFMessage,
 
             # Auxiliary stuff
             Optional: Optional,

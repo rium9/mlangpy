@@ -28,21 +28,22 @@ _END_NT:    ">"
 
 // Allow terminals and non-terminals to contain any symbol except
 // ">", "<", "|" and "::=".
-STRING: /[^><|"::="]+/
+NT_STRING:  /[^><|"::=""\n"]+/
+STRING:     /[^><|"::=""\n"" "]+/
 
 // =====================================================================
-//       Part 3: Defining the abstract syntax of ABNF
+//       Part 3: Defining the abstract syntax of BNF
 // =====================================================================
 syntax: rule+
 rule: non_terminal _DEF_SYM elements
 
 // Terminals and non-terminals
-non_terminal: _START_NT STRING _END_NT
+non_terminal: _START_NT NT_STRING _END_NT
 terminal: STRING
 
 // RHS of rules
 elements: alternation
 alternation: concatenation (_ALT_SYM concatenation)*
-concatenation: element (" "+ element)*
+concatenation: element (" "* element)*
 element: non_terminal | terminal
 

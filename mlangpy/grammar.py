@@ -93,6 +93,8 @@ class Bracket(Feature):
         return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
                self.subject == other.subject
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.subject)})'
 
 class Symbol(Feature):
     """ An abstract concept of (terminal/non-terminal/variable/etc.) symbol. Should never be instantiated -
@@ -134,6 +136,9 @@ class Symbol(Feature):
         return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
                self.subject == other.subject
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.subject)})'
+
 
 class Terminal(Symbol):
     """ Subclass of Symbol that represents terminal symbols in a grammar. Defaults to BNF syntax. """
@@ -152,12 +157,16 @@ class NonTerminal(Symbol):
 class Optional(Bracket):
 
     def __init__(self, subject, left_bound='[', right_bound=']'):
+        if isinstance(subject, list):
+            subject = Concat(subject)
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
 
 
 class Group(Bracket):
 
     def __init__(self, subject, left_bound='(', right_bound=')'):
+        if isinstance(subject, list):
+            subject = Concat(subject)
         super().__init__(subject, left_bound=left_bound, right_bound=right_bound)
 
 
@@ -181,13 +190,11 @@ class Sequence:
         #   with any object - replaced with a list containing that object
         #   with a sequence object - its terms are copied over
         #   with a list of terms - no changes necessary, this is what we want.
-        if not isinstance(terms, list):
-            self.terms = [terms]
-        elif issubclass(terms.__class__, self.__class__):
-            self.terms = terms.terms
-        else:
-            self.terms = terms
 
+        if not isinstance(terms, list):
+            raise GrammarException(f'{self.__class__.__name__} can only be instantiated with a list of terms.')
+
+        self.terms = terms
         self.separator = separator
 
     def __str__(self):
@@ -238,6 +245,10 @@ class Sequence:
 
         return self
 
+    def __repr__(self):
+        r = f'{self.__class__.__name__}'
+        terms = ', '.join([repr(term) for term in self.terms])
+        return f'{r}({terms})'
 
 class Concat(Sequence):
 
@@ -380,6 +391,9 @@ class Rule:
         self.prod = production
         self.terminator = terminator
 
+    def is_equivalent_to(self, other):
+        return self.right == other.right
+
     def __str__(self):
         """
         Returns:
@@ -391,11 +405,10 @@ class Rule:
     def __eq__(self, other):
         """ Rules are equal modulo any syntactic differences. """
         return (issubclass(self.__class__, other.__class__) or issubclass(other.__class__, self.__class__)) and \
-               self.right == other.right
+               self.left == other.left and self.right == other.right
 
-    def is_equivalent(self, other):
-        return self.right == other.right
-
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.left)}, {repr(self.right)})'
 
 class Ruleset:
     """ A class representing a collection of Rule objects.
@@ -416,14 +429,6 @@ class Ruleset:
                 )
 
         self.rules = list(rules)
-
-    def add_rule(self, rule):
-        """ Add a new rule to the ruleset.
-
-        Args:
-            rule (Rule): The rule to be added to the Ruleset instance.
-        """
-        self.rules.append(rule)
 
     def find_rules(self, rule):
         """ Returns rules equal to the one provided. See Rule __eq__ for equality check.
@@ -516,8 +521,6 @@ class Ruleset:
         if issubclass(other.__class__, Ruleset):
             return self.__class__(self.rules + other.rules)
         elif issubclass(other.__class__, Rule):
-            if self.rule_exists(other):
-                return self
             return self.__class__(self.rules + [other])
         else:
             raise NotImplemented
@@ -530,7 +533,3 @@ class Ruleset:
             return self.__class__([other] + self.rules)
         else:
             raise NotImplemented
-
-
-if __name__ == '__main__':
-    pass

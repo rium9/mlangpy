@@ -1,0 +1,7 @@
+<flow descriptor list> ::= <SE flow descriptor>
+<SE flow descriptor> ::=
+                       <FLOWSPEC> <filter spec list>
+
+<filter spec list> ::=  <FILTER_SPEC>
+
+                  |  <filter spec list> <FILTER_SPEC>

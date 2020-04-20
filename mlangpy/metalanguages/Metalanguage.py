@@ -196,9 +196,6 @@ class Metalanguage:
 
         self.ruleset.rules = new_rules
 
-    def add_rule(self, rule):
-        self.ruleset.add_rule(rule)
-
     def replace_feature(self, term, new_rule: Rule, name: NonTerminal):
         """ Create a new rule intended to replace an existing feature
                 A ::= x term y  ->      A ::= x name y
@@ -239,28 +236,31 @@ class Metalanguage:
                         definition[i] = new_nt
                         self.ruleset += new_rule
 
-    def remove_groups(self, rule):
-        for definition in rule.right:
-            for i in range(0, len(definition)):
-                if issubclass(definition[i].__class__, Group):
+    def remove_groups_from(self, rule):
+        new_rules = []
+
+        for concat in rule.right:
+            for i in range(0, len(concat)):
+                if issubclass(concat[i].__class__, Group):
 
                     # check to see if there's a definition already
-                    looking_for = Rule([], [definition[i].subject, []])
-                    matching = self.ruleset.find_rules(looking_for)
+                    looking_for = DefList([concat[i].subject])
+                    matching = self.ruleset.find_rules_for(looking_for)
 
                     if matching:
-                        definition[i] = matching[0].left[0]
+                        concat[i] = matching[0].left[0]
                     else:
                         new_nt = self.syntax[NonTerminal](f'grp {self.grp_count}')
-                        self.grp_count += 1
+                        self.rep_count += 1
 
                         new_rule = self.syntax[Rule](
                             new_nt,
-                            [definition[i].subject]
+                            [concat[i].subject]
                         )
 
-                        definition[i] = new_nt
-                        self.ruleset += new_rule
+                        new_rules.append(new_rule)
+
+        return new_rules
 
     def remove_repetitions(self, rule):
 
