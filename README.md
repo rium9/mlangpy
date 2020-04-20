@@ -1,6 +1,6 @@
 # mlangpy
 
-A collection of tools for parsing, building and manipulating metalanguages.
+A collection of tools for parsing, building and manipulating BNF-like metalanguages.
 
 ## Getting started
 
