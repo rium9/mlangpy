@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mlangpy",
-    version="0.0.6",
+    version="0.0.7",
     author="Jamie Muir",
     author_email="jam10@hw.ac.uk",
     description="A package for parsing and manipulating some standard metalanguages.",
