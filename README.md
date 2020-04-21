@@ -10,7 +10,7 @@ This tool requires Python v3.6+.
 
 ### Installation
 
-Currently, mlangpy depends on `ordered-sets` (to be removed) and `lark-parser`.
+`mlangpy` requires `lark-parser` to be installed.
 
 ```
 pip install lark-parser
