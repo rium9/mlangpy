@@ -13,7 +13,6 @@ This tool requires Python v3.6+.
 Currently, mlangpy depends on `ordered-sets` (to be removed) and `lark-parser`.
 
 ```
-pip install ordered-sets
 pip install lark-parser
 ```
 
