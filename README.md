@@ -27,7 +27,7 @@ pip install --index-url https://test.pypi.org/simple --no-deps mlangpy
 ```
 git clone https://github.com/rium9/mlangpy
 ```
-Inside `mlangpy', do:
+Inside `mlangpy`, do:
 
 ```
 pip install -r requirements.txt
