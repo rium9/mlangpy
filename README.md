@@ -23,12 +23,6 @@ pip install lark-parser
 pip install --index-url https://test.pypi.org/simple --no-deps mlangpy
 ```
 
-To run the tests:
-
-```
-python -m unittest discover tests
-```
-
 #### For developers
 ```
 git clone https://github.com/rium9/mlangpy
@@ -37,6 +31,12 @@ Inside `mlangpy`, do:
 
 ```
 pip install -r requirements.txt
+```
+
+To run the tests:
+
+```
+python -m unittest discover tests
 ```
 
 `mlangpy` relies heavily on the [Lark parser](https://github.com/lark-parser/lark "Lark parser") for its parsing facilities, so it's recommended that you familiarise yourself with it.
