@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ### Validate Metalanguages 
 
-Currently, mlangpy supports recognition of BNF ([ALGOL60 variant](homepages.cs.ncl.ac.uk/cliff.jones/publications/OCRd/BBG63.pdf)), EBNF ([ISO/IEC 14977](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf)) and ABNF ([RFC 5234](https://tools.ietf.org/html/rfc5234)). You can generate parse trees for grammars using `metaparsers.py`:
+Currently, mlangpy supports recognition of BNF ([ALGOL60 variant](homepages.cs.ncl.ac.uk/cliff.jones/publications/OCRd/BBG63.pdf)), EBNF ([ISO/IEC 14977](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf)), ABNF ([RFC 5234](https://tools.ietf.org/html/rfc5234)) and RBNF ([RFC 5511](https://tools.ietf.org/html/rfc5511)). You can generate parse trees for grammars using `metaparsers.py`:
 
 ```python
 from mlangpy.metaparsers import validate_ABNF, validate_ABNF_faithful, validate_EBNF
