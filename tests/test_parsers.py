@@ -73,6 +73,15 @@ class TestGrammars(TestCase):
     def test_bnf_if(self):
         validate_BNF(open(os.path.join(self.bnfs, 'if.txt')).read())
 
+    def test_bnf_algol(self):
+        validate_BNF(open(os.path.join(self.bnfs, 'algol.txt')).read())
+
+    def test_bnf_ant(self):
+        validate_BNF(open(os.path.join(self.bnfs, 'ant.txt')).read())
+
+    def test_bnf_ant2(self):
+        validate_BNF(open(os.path.join(self.bnfs, 'ant2.txt')).read())
+
     # Test all sample RBNFs using rbnf.lark
     def test_rbnf_lark_all(self):
         try:
@@ -113,6 +122,20 @@ class TestGrammars(TestCase):
             self.fail()
 
     # Test individual sample EBNFs using ebnf.lark
+    def test_ebnf_ebnf_if(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'ebnf_if.txt')).read())
+
+    def test_ebnf_ebnf_if2(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'ebnf_if2.txt')).read())
+
+    def test_ebnf_ebnf_self_define(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'ebnf_self_define.txt')).read())
+
+    def test_ebnf_ebnf_self_define_no_comments(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'ebnf_self_define_no_comments.txt')).read())
+
+    def test_ebnf_ebnf_testing(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'testing.txt')).read())
 
     # Test all sample EBNFs using ebnf_faithful.lark
     def test_ebnf_faithful_lark_all(self):
@@ -122,3 +145,17 @@ class TestGrammars(TestCase):
             self.fail()
 
     # Test individual sample EBNFs using ebnf_faithful.lark
+    def test_ebnf_faithful_ebnf_if(self):
+        validate_EBNF(open(os.path.join(self.ebnfs, 'ebnf_if.txt')).read())
+
+    def test_ebnf_faithful_ebnf_if2(self):
+        validate_EBNF_faithful(open(os.path.join(self.ebnfs, 'ebnf_if2.txt')).read())
+
+    def test_ebnf_faithful_ebnf_self_define(self):
+        validate_EBNF_faithful(open(os.path.join(self.ebnfs, 'ebnf_self_define.txt')).read())
+
+    def test_ebnf_faithful_ebnf_self_define_no_comments(self):
+        validate_EBNF_faithful(open(os.path.join(self.ebnfs, 'ebnf_self_define_no_comments.txt')).read())
+
+    def test_ebnf_ebnf_testing(self):
+        validate_EBNF_faithful(open(os.path.join(self.ebnfs, 'testing.txt')).read())

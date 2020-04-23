@@ -73,7 +73,8 @@ class TernaryOperator(Feature):
 
 
 class Bracket(Feature):
-    """ Abstract representation of a
+    """
+    Abstract representation of a feature that can encompass more than one term.
     """
 
     def __init__(self, subject, left_bound, right_bound):

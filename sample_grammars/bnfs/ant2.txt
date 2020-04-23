@@ -1,0 +1,10 @@
+<code> ::= <line>|  <code><line>
+<line> ::= <expr>
+<expr> ::= <if-statement>|  <op>
+<if-statement> ::= if (food_ahead()) <newline>
+        {<expr>}  <newline>
+        else      <newline>
+        {<expr>}
+
+<op> ::= left();|  right();|  movie();
+<newline> ::= \n
