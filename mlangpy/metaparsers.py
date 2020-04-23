@@ -291,5 +291,5 @@ if __name__ == '__main__':
     #b = validate_ABNF_faithful(open('../sample_grammars/abnfs/core_abnf.txt').read())
     #print(b.pretty())
 
-    c = validate_EBNF(open('../sample_grammars/ebnfs/ebnf_self_define.txt').read())
+    c = validate_EBNF(open('../sample_grammars/ebnfs/testing.txt').read())
     print(c.pretty())

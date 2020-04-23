@@ -1,0 +1,3 @@
+<unsigned integer> ::= <digit> | <unsigned integer><digit>
+<integer> ::= <unsigned integer> | + <unsigned integer> | - <unsigned integer>
+<decimal fraction> ::= . <unsigned integer>

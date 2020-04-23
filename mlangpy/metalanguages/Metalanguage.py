@@ -124,50 +124,10 @@ class Metalanguage:
                 for j in range(0, len(rule.right[i])):
                     rule.right[i][j] = self.normalise_term(rule.right[i][j])
 
-    def normalise2(self):
-        rf = self.syntax[Rule]([], [])
-        self.ruleset.update_rules(production=rf.prod, alternation=rf.right.separator, terminator=rf.terminator)
-
     def export_ruleset(self, path):
         serialised_grammar = str(self.ruleset)
         f = open(path, 'w')
         f.write(serialised_grammar)
-
-    def eliminate_optionals(self):
-
-        # TODO implement dunder methods for Ruleset to make nicer iterations
-        # Iterate over each rule
-        for rule in self.ruleset:
-            # Inspect each definition (Sequence) in the DefinitionList
-            for definition in rule.right:
-                # Check all members of the definition, formulate a new rule if necessary
-                for i in range(0, len(definition)):
-                    if isinstance(definition[i], Optional):
-                        new_nt = NonTerminal(f'op {definition[i]}')
-
-                        # New rule:
-                        #   B -> a |
-                        new_rule = self.syntax[Rule](
-                            self.syntax[Sequence]([new_nt]),
-                            self.syntax[DefinitionList]([
-                                self.syntax[Sequence]([definition[i].subject]),
-                                self.syntax[Sequence]([])
-                            ])
-                        )
-
-                        # A -> B
-                        definition[i] = new_nt
-
-                        # Add new rule if necessary
-                        # TODO This can be eliminated by using ordered sets
-                        self.ruleset += new_rule
-
-    def eliminate_repetition(self):
-        for rule in self.ruleset:
-            for definition in rule.right:
-                for i in range(0, len(definition)):
-                    if isinstance(definition[i], Repetition):
-                        pass  # TODO
 
     def eliminate_groups(self):
 
@@ -186,22 +146,6 @@ class Metalanguage:
 
                         definition[i] = new_nt
                         self.ruleset += new_rule
-
-    def eliminate_alternation(self):
-        # TODO implement dunder methods for Ruleset to make nicer iterations
-        new_rules = OrderedSet()
-        for rule in self.ruleset:
-            for sequence in rule.right:
-                new_rules |= {self.syntax[Rule](rule.left, self.syntax[DefinitionList]([sequence]))}
-
-        self.ruleset.rules = new_rules
-
-    def replace_feature(self, term, new_rule: Rule, name: NonTerminal):
-        """ Create a new rule intended to replace an existing feature
-                A ::= x term y  ->      A ::= x name y
-                                        new_rule        (should be equivalent to language represented by term).
-        """
-        pass
 
     def remove_optionals_from_term(self, term, recursive=False):
         new_rules = OrderedSet()
@@ -286,9 +230,6 @@ class Metalanguage:
 
                     definition[i] = new_nt
                     self.ruleset += new_rule
-
-    def test(self, rule):
-        rule.right[0] = 'hi'
 
     def normalise_term(self, term):
 
